@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usuario (cliente)
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  role      Role     @default(USER)
+  orders    Order[]
+  wishlist  WishlistItem[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tcg_users")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// Categoría de juego
+model Game {
+  id          String    @id @default(uuid())
+  name        String    @unique // pokemon, yugioh, magic, etc.
+  displayName String
+  imageUrl    String?
+  cards       Card[]
+  products    Product[]
+  createdAt   DateTime  @default(now())
+
+  @@map("tcg_games")
+}
+
+// Carta suelta
+model Card {
+  id          String    @id @default(uuid())
+  name        String
+  gameId      String
+  game        Game      @relation(fields: [gameId], references: [id])
+  set         String
+  setCode     String?
+  rarity      String?
+  condition   Condition @default(NM)
+  price       Decimal   @db.Decimal(10, 2)
+  priceFoil   Decimal?  @db.Decimal(10, 2)
+  stock       Int       @default(0)
+  imageUrl    String?
+  description String?
+  scryfallId  String?   @unique
+  active      Boolean   @default(true)
+  orderItems  OrderItem[]
+  wishlist    WishlistItem[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([gameId])
+  @@index([name])
+  @@map("tcg_cards")
+}
+
+enum Condition {
+  NM  // Near Mint
+  LP  // Lightly Played
+  MP  // Moderately Played
+  HP  // Heavily Played
+}
+
+// Producto sellado
+model Product {
+  id              String      @id @default(uuid())
+  name            String
+  gameId          String
+  game            Game        @relation(fields: [gameId], references: [id])
+  set             String
+  type            ProductType
+  price           Decimal     @db.Decimal(10, 2)
+  discountPercent Int         @default(0)
+  badge           Badge?
+  stock           Int         @default(0)
+  imageUrl        String?
+  description     String?
+  active          Boolean     @default(true)
+  orderItems      OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([gameId])
+  @@map("tcg_products")
+}
+
+enum ProductType {
+  BOOSTER_BOX
+  ELITE_TRAINER
+  DECK
+  BUNDLE
+  PREMIUM
+  BLISTER
+  STARTER
+}
+
+enum Badge {
+  NUEVO
+  OFERTA
+  PREVENTA
+}
+
+// Pedido
+model Order {
+  id            String      @id @default(uuid())
+  orderNumber   String      @unique
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  customerName  String
+  customerEmail String
+  customerPhone String
+  address       String
+  city          String?
+  state         String?
+  zipCode       String?
+  subtotal      Decimal     @db.Decimal(10, 2)
+  shipping      Decimal     @db.Decimal(10, 2) @default(0)
+  total         Decimal     @db.Decimal(10, 2)
+  status        OrderStatus @default(PENDING)
+  paymentMethod String      @default("paypal")
+  paymentId     String?
+  items        OrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("tcg_orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// Item del pedido
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  cardId    String?
+  card      Card?   @relation(fields: [cardId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  name      String
+  price     Decimal @db.Decimal(10, 2)
+  quantity  Int     @default(1)
+  imageUrl  String?
+
+  @@map("tcg_order_items")
+}
+
+// Lista de deseos
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId    String?
+  card      Card?    @relation(fields: [cardId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, cardId])
+  @@map("tcg_wishlist")
+}
+
+// Configuración del sitio
+model SiteConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("tcg_site_config")
+}
