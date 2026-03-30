@@ -25,8 +25,13 @@ router.get('/', async (req, res) => {
 
     const where = { active: true };
 
-    if (game) {
-      where.gameId = game;
+    if (game && game !== 'all') {
+      const gameRecord = await prisma.game.findFirst({
+        where: { name: game.toLowerCase() }
+      });
+      if (gameRecord) {
+        where.gameId = gameRecord.id;
+      }
     }
 
     if (search) {
