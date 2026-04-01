@@ -111,6 +111,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
     const {
       name,
       gameId,
+      game,
       set,
       setCode,
       rarity,
@@ -123,15 +124,32 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
       scryfallId
     } = req.body;
 
+    let finalGameId = gameId;
+    
+    if (!finalGameId && game) {
+      const gameRecord = await prisma.game.findFirst({
+        where: { name: game.toLowerCase() }
+      });
+      if (gameRecord) {
+        finalGameId = gameRecord.id;
+      } else {
+        return res.status(400).json({ error: 'Game not found. Create it first.' });
+      }
+    }
+
+    if (!finalGameId) {
+      return res.status(400).json({ error: 'gameId or game is required' });
+    }
+
     const card = await prisma.card.create({
       data: {
         name,
-        gameId,
+        gameId: finalGameId,
         set,
         setCode,
         rarity,
         condition: condition || 'NM',
-        price,
+        price: price || 0,
         priceFoil,
         stock: stock || 0,
         imageUrl,
@@ -144,7 +162,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
     res.status(201).json(card);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 });
 
@@ -152,7 +170,20 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { game, gameId, ...rest } = req.body;
+    
+    let updateData = rest;
+    
+    if (game && !gameId) {
+      const gameRecord = await prisma.game.findFirst({
+        where: { name: game.toLowerCase() }
+      });
+      if (gameRecord) {
+        updateData.gameId = gameRecord.id;
+      }
+    } else if (gameId) {
+      updateData.gameId = gameId;
+    }
 
     const card = await prisma.card.update({
       where: { id },
@@ -163,7 +194,7 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     res.json(card);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 });
 
