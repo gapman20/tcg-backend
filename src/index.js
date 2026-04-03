@@ -11,6 +11,7 @@ const cardRoutes = require('./routes/card.routes');
 const productRoutes = require('./routes/product.routes');
 const orderRoutes = require('./routes/order.routes');
 const wishlistRoutes = require('./routes/wishlist.routes');
+const contactRoutes = require('./routes/contact.routes');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -30,6 +31,7 @@ app.use('/api/cards', cardRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
