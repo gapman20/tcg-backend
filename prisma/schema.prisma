@@ -9,20 +9,25 @@ datasource db {
 
 // Usuario (cliente)
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  zipCode   String?
-  role      Role     @default(USER)
-  orders    Order[]
-  wishlist  WishlistItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  name           String
+  image          String?
+  phone          String?
+  address        String?
+  city           String?
+  state          String?
+  zipCode        String?
+  country        String?
+  betweenStreets String?
+  houseReference String?
+  role           Role     @default(USER)
+  orders         Order[]
+  wishlist       WishlistItem[]
+  cart           CartItem[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("tcg_users")
 }
@@ -64,6 +69,7 @@ model Card {
   active      Boolean   @default(true)
   orderItems  OrderItem[]
   wishlist    WishlistItem[]
+  cartItems   CartItem[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -95,6 +101,8 @@ model Product {
   description     String?
   active          Boolean     @default(true)
   orderItems      OrderItem[]
+  wishlist        WishlistItem[]
+  cartItems       CartItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -178,10 +186,36 @@ model WishlistItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cardId    String?
   card      Card?    @relation(fields: [cardId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([userId, cardId])
+  @@unique([userId, productId])
   @@map("tcg_wishlist")
+}
+
+// Carrito de compras
+model CartItem {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId    String?   @unique
+  card      Card?     @relation(fields: [cardId], references: [id])
+  productId String?   @unique
+  product   Product?  @relation(fields: [productId], references: [id])
+  quantity  Int       @default(1)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, cardId])
+  @@unique([userId, productId])
+  @@map("tcg_cart_items")
+}
+
+enum ItemType {
+  CARD
+  PRODUCT
 }
 
 // Configuración del sitio

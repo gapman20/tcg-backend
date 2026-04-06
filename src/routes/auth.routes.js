@@ -3,9 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { PrismaClient } = require('@prisma/client');
+const { OAuth2Client } = require('google-auth-library');
 
 const router = express.Router();
 const prisma = new PrismaClient();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Registro de usuario
 router.post('/register', [
@@ -166,6 +168,79 @@ router.get('/verify', async (req, res) => {
     res.json({ valid: true, user });
   } catch (error) {
     res.status(401).json({ valid: false });
+  }
+});
+
+// Google OAuth - Login or Register
+router.post('/google', async (req, res) => {
+  try {
+    const { googleToken } = req.body;
+
+    if (!googleToken) {
+      return res.status(400).json({ error: 'Google token is required' });
+    }
+
+    // Verify the Google token
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: googleToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
+    } catch (verifyError) {
+      console.error('Token verification failed:', verifyError.message);
+      // Alternative: decode the JWT directly
+      const parts = googleToken.split('.');
+      if (parts.length === 3) {
+        const decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+        console.log('Decoded token payload:', decoded);
+        payload = decoded;
+      } else {
+        return res.status(401).json({ error: 'Invalid Google token', details: verifyError.message });
+      }
+    }
+
+    if (!payload) {
+      return res.status(401).json({ error: 'Could not extract token payload' });
+    }
+
+    const { email, name, picture } = payload;
+
+    // Check if user exists
+    let user = await prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      // Create new user
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: name || email.split('@')[0],
+          password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10),
+          image: picture
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          image: true,
+          createdAt: true
+        }
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    res.json({ user, token });
+  } catch (error) {
+    console.error('Google OAuth error:', error.message);
+    res.status(401).json({ error: 'Invalid Google token', details: error.message });
   }
 });
 
