@@ -219,11 +219,18 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
 router.put('/:id/status', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, trackingNumber } = req.body;
+
+    const updateData = { status };
+    
+    // Si el estado es SHIPPED, guardar el número de seguimiento
+    if (status === 'SHIPPED' && trackingNumber) {
+      updateData.trackingNumber = trackingNumber;
+    }
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: { items: true }
     });
 

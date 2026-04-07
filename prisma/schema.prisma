@@ -143,6 +143,7 @@ model Order {
   shipping      Decimal     @db.Decimal(10, 2) @default(0)
   total         Decimal     @db.Decimal(10, 2)
   status        OrderStatus @default(PENDING)
+  trackingNumber String?
   paymentMethod String      @default("paypal")
   paymentId     String?
   items        OrderItem[]
