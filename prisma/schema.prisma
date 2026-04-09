@@ -9,20 +9,35 @@ datasource db {
 
 // Usuario (cliente)
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  zipCode   String?
-  role      Role     @default(USER)
-  orders    Order[]
-  wishlist  WishlistItem[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  password       String
+  name           String
+  image          String?
+  phone          String?
+  address        String?
+  city           String?
+  state           String?
+  zipCode        String?
+  country        String?
+  betweenStreets String?
+  houseReference String?
+  // Información de tarjeta guardada
+  cardBrand          String?
+  cardLast4          String?
+  cardHolderName     String?
+  cardExpiry         String?
+  stripePaymentMethodId String?
+  stripeCustomerId   String?
+  // Recuperación de contraseña
+  resetPasswordToken String?
+  resetPasswordExpires DateTime?
+  role           Role     @default(USER)
+  orders         Order[]
+  wishlist       WishlistItem[]
+  cart           CartItem[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("tcg_users")
 }
@@ -64,6 +79,7 @@ model Card {
   active      Boolean   @default(true)
   orderItems  OrderItem[]
   wishlist    WishlistItem[]
+  cartItems   CartItem[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -95,6 +111,8 @@ model Product {
   description     String?
   active          Boolean     @default(true)
   orderItems      OrderItem[]
+  wishlist        WishlistItem[]
+  cartItems       CartItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
@@ -135,8 +153,12 @@ model Order {
   shipping      Decimal     @db.Decimal(10, 2) @default(0)
   total         Decimal     @db.Decimal(10, 2)
   status        OrderStatus @default(PENDING)
+  trackingNumber String?
   paymentMethod String      @default("paypal")
   paymentId     String?
+  cardBrand     String?
+  cardLast4     String?
+  cardHolderName String?
   items        OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -178,10 +200,36 @@ model WishlistItem {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cardId    String?
   card      Card?    @relation(fields: [cardId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
   createdAt DateTime @default(now())
 
   @@unique([userId, cardId])
+  @@unique([userId, productId])
   @@map("tcg_wishlist")
+}
+
+// Carrito de compras
+model CartItem {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId    String?   @unique
+  card      Card?     @relation(fields: [cardId], references: [id])
+  productId String?   @unique
+  product   Product?  @relation(fields: [productId], references: [id])
+  quantity  Int       @default(1)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, cardId])
+  @@unique([userId, productId])
+  @@map("tcg_cart_items")
+}
+
+enum ItemType {
+  CARD
+  PRODUCT
 }
 
 // Configuración del sitio
@@ -192,4 +240,18 @@ model SiteConfig {
   updatedAt DateTime @updatedAt
 
   @@map("tcg_site_config")
+}
+
+// Mensajes de contacto
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("tcg_contact_messages")
 }

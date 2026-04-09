@@ -219,11 +219,40 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
 router.put('/:id/status', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, trackingNumber } = req.body;
+
+    const updateData = { status };
+    
+    // Si el estado es SHIPPED, guardar el número de seguimiento
+    if (status === 'SHIPPED' && trackingNumber) {
+      updateData.trackingNumber = trackingNumber;
+    }
 
     const order = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: updateData,
+      include: { items: true }
+    });
+
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Confirmar pago manual (admin) - transferencia, OXXO, MercadoPago
+router.put('/:id/confirm-payment', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentProof } = req.body;
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: { 
+        status: 'PROCESSING',
+        paymentId: paymentProof || `CONFIRMED-${Date.now()}`
+      },
       include: { items: true }
     });
 

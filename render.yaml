@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: tcg-backend
+    env: node
+    buildCommand: npm run db:generate
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: JWT_SECRET
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: ADMIN_EMAIL
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: ADMIN_PASSWORD
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: FRONTEND_URL
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: DATABASE_URL
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: STRIPE_SECRET_KEY
+        value: CHANGE_ME_IN_RENDER_DASHBOARD
+      - key: GOOGLE_CLIENT_ID
+        value: CHANGE_ME_IN_RENDER_DASHBOARD

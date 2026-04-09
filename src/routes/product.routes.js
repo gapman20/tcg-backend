@@ -96,7 +96,8 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const {
       name,
-      gameId,
+      game,
+      gameId: gameIdInput,
       set,
       type,
       price,
@@ -107,10 +108,25 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
       description
     } = req.body;
 
+    let finalGameId = gameIdInput;
+    
+    if (!finalGameId && game) {
+      const gameRecord = await prisma.game.findFirst({
+        where: { name: game.toLowerCase() }
+      });
+      if (gameRecord) {
+        finalGameId = gameRecord.id;
+      }
+    }
+
+    if (!finalGameId) {
+      return res.status(400).json({ error: 'Se requiere gameId o game válido' });
+    }
+
     const product = await prisma.product.create({
       data: {
         name,
-        gameId,
+        gameId: finalGameId,
         set,
         type,
         price,
@@ -134,7 +150,22 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { game, gameId: gameIdInput, ...updateData } = req.body;
+
+    let finalGameId = gameIdInput;
+    
+    if (!finalGameId && game) {
+      const gameRecord = await prisma.game.findFirst({
+        where: { name: game.toLowerCase() }
+      });
+      if (gameRecord) {
+        finalGameId = gameRecord.id;
+      }
+    }
+
+    if (finalGameId) {
+      updateData.gameId = finalGameId;
+    }
 
     const product = await prisma.product.update({
       where: { id },
