@@ -6,10 +6,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "db:generate": "npx prisma generate",
-    "db:push": "npx prisma db push",
-    "db:migrate": "npx prisma migrate dev",
-    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma@5.22.0 generate",
+    "db:push": "npx prisma@5.22.0 db push",
+    "db:migrate": "npx prisma@5.22.0 migrate dev",
+    "db:studio": "npx prisma@5.22.0 studio",
     "db:seed": "node prisma/seed.js"
   },
   "prisma": {
