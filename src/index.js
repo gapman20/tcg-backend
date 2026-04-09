@@ -54,14 +54,15 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:3000',
       process.env.FRONTEND_URL,
-      'https://tcg-frontend-one.vercel.app'
+      'https://tcg-frontend-one.vercel.app',
+      'https://tcg-frontend-kyv70lave-gabriel-alvarez-s-projects.vercel.app'
     ].filter(Boolean);
     
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.log('CORS rejected origin:', origin);
-      callback(null, true); // Allow para debugging
+      callback(null, true);
     }
   },
   credentials: true
