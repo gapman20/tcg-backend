@@ -17,6 +17,7 @@ const contactRoutes = require('./routes/contact.routes');
 const stripeRoutes = require('./routes/stripe.routes');
 
 const app = express();
+app.set('trust proxy', 1);
 const prisma = new PrismaClient();
 
 // Rate limiting general
