@@ -17,11 +17,21 @@ model User {
   phone          String?
   address        String?
   city           String?
-  state          String?
+  state           String?
   zipCode        String?
   country        String?
   betweenStreets String?
   houseReference String?
+  // Información de tarjeta guardada
+  cardBrand          String?
+  cardLast4          String?
+  cardHolderName     String?
+  cardExpiry         String?
+  stripePaymentMethodId String?
+  stripeCustomerId   String?
+  // Recuperación de contraseña
+  resetPasswordToken String?
+  resetPasswordExpires DateTime?
   role           Role     @default(USER)
   orders         Order[]
   wishlist       WishlistItem[]
@@ -146,6 +156,9 @@ model Order {
   trackingNumber String?
   paymentMethod String      @default("paypal")
   paymentId     String?
+  cardBrand     String?
+  cardLast4     String?
+  cardHolderName String?
   items        OrderItem[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt

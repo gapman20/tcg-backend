@@ -119,16 +119,20 @@ router.put('/:id', authMiddleware, async (req, res) => {
       return res.json({ message: 'Item removed from cart' });
     }
 
-    const updatedItem = await prisma.cartItem.update({
-      where: { id },
-      data: { quantity },
-      include: {
-        card: { include: { game: true } },
-        product: { include: { game: true } }
-      }
-    });
-
-    res.json(formatCartItem(updatedItem));
+    try {
+      const updatedItem = await prisma.cartItem.update({
+        where: { id },
+        data: { quantity },
+        include: {
+          card: { include: { game: true } },
+          product: { include: { game: true } }
+        }
+      });
+      res.json(formatCartItem(updatedItem));
+    } catch (e) {
+      console.error('Error updating cart item:', e);
+      return res.status(404).json({ error: 'Cart item not found' });
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });

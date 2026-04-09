@@ -112,30 +112,50 @@ router.post('/admin/login', [
   try {
     const { email, password } = req.body;
 
-    // Verificar credenciales de admin
-    if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD) {
-      return res.status(401).json({ error: 'Invalid admin credentials' });
+    // Primero verificar si hay un usuario admin en la base de datos
+    const adminUser = await prisma.user.findFirst({
+      where: { 
+        email: email.toLowerCase(),
+        role: 'ADMIN'
+      }
+    });
+
+    let isValidAdmin = false;
+    let adminName = 'Administrator';
+
+    if (adminUser) {
+      // Verificar contraseña del usuario admin en DB
+      const bcrypt = require('bcrypt');
+      isValidAdmin = await bcrypt.compare(password, adminUser.password);
+      adminName = adminUser.name;
+    } else if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
+      // Fallback a variables de entorno
+      isValidAdmin = email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD;
+    }
+
+    if (!isValidAdmin) {
+      return res.status(401).json({ error: 'Credenciales de administrador inválidas' });
     }
 
     // Generar token de admin
     const token = jwt.sign(
-      { id: 'admin', role: 'ADMIN' },
+      { id: adminUser?.id || 'admin', role: 'ADMIN' },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.json({ 
       token,
       user: {
-        id: 'admin',
-        email: process.env.ADMIN_EMAIL,
-        name: 'Administrator',
+        id: adminUser?.id || 'admin',
+        email: adminUser?.email || email,
+        name: adminName,
         role: 'ADMIN'
       }
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Error del servidor' });
   }
 });
 
@@ -241,6 +261,98 @@ router.post('/google', async (req, res) => {
   } catch (error) {
     console.error('Google OAuth error:', error.message);
     res.status(401).json({ error: 'Invalid Google token', details: error.message });
+  }
+});
+
+// Recuperar contraseña - Solicitar código
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email es requerido' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    // No revelar si el usuario existe o no
+    if (!user) {
+      return res.json({ message: 'Si el email existe, recibirás un código de recuperación' });
+    }
+
+    // Generar código de 6 dígitos
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // Guardar código de recuperación (vigencia 15 minutos)
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        resetPasswordToken: resetCode,
+        resetPasswordExpires: expires
+      }
+    });
+
+    // En producción: enviar email con el código
+    // await sendEmail(email, 'Código de recuperación', `Tu código es: ${resetCode}`);
+    
+    console.log(`🔐 Código de recuperación para ${email}: ${resetCode}`);
+
+    res.json({ message: 'Si el email existe, recibirás un código de recuperación' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
+
+// Confirmar código y cambiar contraseña
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, código y nueva contraseña son requeridos' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Código inválido' });
+    }
+
+    // Verificar código y fecha de expiración
+    if (user.resetPasswordToken !== code) {
+      return res.status(400).json({ error: 'Código inválido' });
+    }
+
+    if (!user.resetPasswordExpires || user.resetPasswordExpires < new Date()) {
+      return res.status(400).json({ error: 'El código ha expirado. Solicita uno nuevo.' });
+    }
+
+    // Actualizar contraseña
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      }
+    });
+
+    res.json({ message: 'Contraseña actualizada correctamente' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error del servidor' });
   }
 });
 

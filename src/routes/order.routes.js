@@ -241,4 +241,26 @@ router.put('/:id/status', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// Confirmar pago manual (admin) - transferencia, OXXO, MercadoPago
+router.put('/:id/confirm-payment', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentProof } = req.body;
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: { 
+        status: 'PROCESSING',
+        paymentId: paymentProof || `CONFIRMED-${Date.now()}`
+      },
+      include: { items: true }
+    });
+
+    res.json(order);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;
