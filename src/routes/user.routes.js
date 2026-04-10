@@ -1,10 +1,9 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 // Obtener perfil del usuario

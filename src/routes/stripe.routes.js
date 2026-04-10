@@ -1,10 +1,9 @@
 const express = require('express');
 const Stripe = require('stripe');
-const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, optionalAuth } = require('../middleware/auth');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_your_key');

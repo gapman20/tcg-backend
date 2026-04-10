@@ -2,11 +2,8 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
 const { OAuth2Client } = require('google-auth-library');
-
-const router = express.Router();
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Registro de usuario

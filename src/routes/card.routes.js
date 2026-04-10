@@ -1,9 +1,8 @@
 const express = require('express');
 const { query, param, body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 // Listar cartas con filtros

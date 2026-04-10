@@ -1,10 +1,9 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, adminMiddleware, optionalAuth } = require('../middleware/auth');
 
 // Crear pedido
