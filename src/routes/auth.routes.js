@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
 const prisma = require('../config/prisma');
+
+const router = express.Router();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Registro de usuario
