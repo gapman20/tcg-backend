@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const prisma = require('../config/prisma');
 const { body, validationResult } = require('express-validator');
+const { adminMiddleware } = require('../middleware/auth');
 
 // Validación
 const contactValidation = [
@@ -38,7 +39,7 @@ router.post('/', contactValidation, async (req, res) => {
 });
 
 // Obtener todos los mensajes (solo admin)
-router.get('/', async (req, res) => {
+router.get('/', adminMiddleware, async (req, res) => {
   try {
     const messages = await prisma.contactMessage.findMany({
       orderBy: { createdAt: 'desc' },
@@ -50,8 +51,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Marcar mensaje como leído
-router.put('/:id/read', async (req, res) => {
+// Marcar mensaje como leído (solo admin)
+router.put('/:id/read', adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const message = await prisma.contactMessage.update({
@@ -65,8 +66,8 @@ router.put('/:id/read', async (req, res) => {
   }
 });
 
-// Eliminar mensaje
-router.delete('/:id', async (req, res) => {
+// Eliminar mensaje (solo admin)
+router.delete('/:id', adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.contactMessage.delete({

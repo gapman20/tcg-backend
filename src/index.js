@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
 
@@ -66,6 +67,9 @@ const corsOptions = {
   credentials: true
 };
 app.use(cors(corsOptions));
+
+// Compression: gzip responses for better performance
+app.use(compression());
 
 // Aplicar rate limiting
 const generalLimiter = rateLimit({
