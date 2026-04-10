@@ -214,9 +214,9 @@ model CartItem {
   id        String    @id @default(uuid())
   userId    String
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cardId    String?   @unique
+  cardId    String?
   card      Card?     @relation(fields: [cardId], references: [id])
-  productId String?   @unique
+  productId String?
   product   Product?  @relation(fields: [productId], references: [id])
   quantity  Int       @default(1)
   createdAt DateTime  @default(now())
