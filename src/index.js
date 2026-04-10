@@ -17,6 +17,7 @@ const contactRoutes = require('./routes/contact.routes');
 const stripeRoutes = require('./routes/stripe.routes');
 
 const app = express();
+app.set('trust proxy', 1);
 const prisma = new PrismaClient();
 
 // Rate limiting general
@@ -47,10 +48,28 @@ const paymentLimiter = rateLimit({
 });
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+const corsOptions = {
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+      'https://tcg-frontend-one.vercel.app',
+      'https://tcg-frontend-kyv70lave-gabriel-alvarez-s-projects.vercel.app',
+      'https://tcg-frontend-kpsj56kft-gabriel-alvarez-s-projects.vercel.app'
+    ].filter(Boolean);
+    
+    // Allow any vercel.app domain for flexibility
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      console.log('CORS rejected origin:', origin);
+      callback(null, true);
+    }
+  },
   credentials: true
-}));
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Aplicar rate limiting

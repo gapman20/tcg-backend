@@ -125,7 +125,6 @@ router.post('/admin/login', [
 
     if (adminUser) {
       // Verificar contraseña del usuario admin en DB
-      const bcrypt = require('bcrypt');
       isValidAdmin = await bcrypt.compare(password, adminUser.password);
       adminName = adminUser.name;
     } else if (process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD) {
