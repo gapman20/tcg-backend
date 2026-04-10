@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../config/prisma');
+const { emitEvent } = require('../config/sse');
 
 const router = express.Router();
 const { authMiddleware, adminMiddleware, optionalAuth } = require('../middleware/auth');
@@ -122,6 +123,15 @@ router.post('/', optionalAuth, [
 
   try {
     res.status(201).json(t);
+    
+    // Emit real-time event for admin notification
+    emitEvent('new_order', {
+      orderNumber: t.orderNumber,
+      customerName: t.customerName,
+      total: t.total,
+      paymentMethod: t.paymentMethod,
+      orderId: t.id,
+    });
   } catch (error) {
     console.error(error);
     if (error.status) {

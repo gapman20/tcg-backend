@@ -3,6 +3,7 @@ const router = express.Router();
 const prisma = require('../config/prisma');
 const { body, validationResult } = require('express-validator');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+const { emitEvent } = require('../config/sse');
 
 // Validación
 const contactValidation = [
@@ -32,6 +33,14 @@ router.post('/', contactValidation, async (req, res) => {
     });
 
     res.status(201).json(contactMessage);
+    
+    // Emit real-time event for admin notification
+    emitEvent('new_message', {
+      messageId: contactMessage.id,
+      name: contactMessage.name,
+      email: contactMessage.email,
+      subject: contactMessage.subject,
+    });
   } catch (error) {
     console.error('Error creating contact message:', error);
     res.status(500).json({ error: 'Error al guardar el mensaje' });

@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
+const { sse, sseMiddleware } = require('./config/sse');
 
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
@@ -115,6 +116,11 @@ app.use('/api/stripe', stripeRoutes);
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// SSE endpoint for real-time admin notifications
+app.get('/api/admin/events', sseMiddleware, (req, res) => {
+  sse.init(req, res);
 });
 
 // Error handler
