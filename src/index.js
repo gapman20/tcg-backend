@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
-const { sse, sseMiddleware } = require('./config/sse');
+const { sseHandler, emitEvent } = require('./config/sse');
 
 // Importar rutas
 const authRoutes = require('./routes/auth.routes');
@@ -119,9 +119,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // SSE endpoint for real-time admin notifications
-app.get('/api/admin/events', sseMiddleware, (req, res) => {
-  sse.init(req, res);
-});
+app.get('/api/admin/events', sseHandler);
 
 // Error handler
 app.use((err, req, res, next) => {
