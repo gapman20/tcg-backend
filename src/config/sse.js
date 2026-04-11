@@ -9,6 +9,11 @@ const clients = new Set();
  * Sets up proper SSE headers and manages client connections
  */
 const sseHandler = (req, res) => {
+  // Set CORS headers explicitly
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
   // Set SSE headers
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',

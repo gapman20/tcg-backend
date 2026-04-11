@@ -119,6 +119,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // SSE endpoint for real-time admin notifications
+app.options('/api/admin/events', cors()); // Handle CORS preflight
 app.get('/api/admin/events', sseHandler);
 
 // Error handler
