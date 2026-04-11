@@ -158,7 +158,7 @@ router.get('/my-orders', authMiddleware, async (req, res) => {
 });
 
 // Obtener estadísticas para admin (pending orders, unread messages)
-router.get('/stats', adminMiddleware, async (req, res) => {
+router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const [pendingOrders, unreadMessages] = await Promise.all([
       prisma.order.count({
