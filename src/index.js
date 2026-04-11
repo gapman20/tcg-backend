@@ -69,6 +69,11 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// SSE endpoint - MUST be before compression to prevent buffering
+// Compression breaks SSE because it buffers the stream
+app.options('/api/admin/events', cors()); // Handle CORS preflight
+app.get('/api/admin/events', sseHandler);
+
 // Compression: gzip responses for better performance
 app.use(compression());
 
@@ -117,10 +122,6 @@ app.use('/api/stripe', stripeRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
-
-// SSE endpoint for real-time admin notifications
-app.options('/api/admin/events', cors()); // Handle CORS preflight
-app.get('/api/admin/events', sseHandler);
 
 // Error handler
 app.use((err, req, res, next) => {
