@@ -157,6 +157,27 @@ router.get('/my-orders', authMiddleware, async (req, res) => {
   }
 });
 
+// Obtener estadísticas para admin (pending orders, unread messages)
+router.get('/stats', adminMiddleware, async (req, res) => {
+  try {
+    const [pendingOrders, unreadMessages] = await Promise.all([
+      prisma.order.count({
+        where: {
+          status: { notIn: ['COMPLETED', 'CANCELLED'] }
+        }
+      }),
+      prisma.contactMessage.count({
+        where: { read: false }
+      })
+    ]);
+
+    res.json({ pendingOrders, unreadMessages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Obtener pedido por ID
 router.get('/:id', optionalAuth, async (req, res) => {
   try {

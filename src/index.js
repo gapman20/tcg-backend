@@ -70,8 +70,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // SSE endpoint - MUST be before compression to prevent buffering
-// Compression breaks SSE because it buffers the stream
-app.options('/api/admin/events', cors()); // Handle CORS preflight
+// CORS is handled by global cors() middleware
 app.get('/api/admin/events', sseHandler);
 
 // Compression: gzip responses for better performance

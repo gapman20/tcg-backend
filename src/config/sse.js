@@ -9,22 +9,15 @@ const clients = new Set();
  * Sets up proper SSE headers and manages client connections
  */
 const sseHandler = (req, res) => {
-  // Set CORS headers explicitly
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  
-  // Set SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*',
-    'X-Accel-Buffering': 'no', // Disable nginx buffering
-  });
+  // Set SSE headers (CORS is handled by global cors middleware)
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
 
   // Send initial connection confirmation
-  res.write(`event: connected\ndata: ${JSON.stringify({ message: 'Connected to SSE stream' })}\n\n`);
+  res.write(`event: connected\ndata: ${JSON.stringify({ message: 'Connected' })}\n\n`);
 
   // Add client to set
   clients.add(res);
