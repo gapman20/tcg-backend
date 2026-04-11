@@ -161,12 +161,11 @@ router.get('/my-orders', authMiddleware, async (req, res) => {
 router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const [pendingOrders, unreadMessages] = await Promise.all([
+      // Count orders that are not DELIVERED or CANCELLED (still active)
       prisma.order.count({
         where: {
-          NOT: {
-            status: {
-              in: ['COMPLETED', 'CANCELLED']
-            }
+          status: {
+            not: 'DELIVERED'
           }
         }
       }),
