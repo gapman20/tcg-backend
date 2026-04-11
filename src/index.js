@@ -70,8 +70,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // SSE endpoint - MUST be before compression to prevent buffering
-// CORS is handled by global cors() middleware
-app.get('/api/admin/events', sseHandler);
+// Handle CORS preflight and set explicit headers for Firefox compatibility
+app.options('/api/admin/events', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.sendStatus(200);
+});
+
+app.get('/api/admin/events', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  sseHandler(req, res);
+});
 
 // Compression: gzip responses for better performance
 app.use(compression());
