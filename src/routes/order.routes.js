@@ -163,7 +163,11 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
     const [pendingOrders, unreadMessages] = await Promise.all([
       prisma.order.count({
         where: {
-          status: { notIn: ['COMPLETED', 'CANCELLED'] }
+          NOT: {
+            status: {
+              in: ['COMPLETED', 'CANCELLED']
+            }
+          }
         }
       }),
       prisma.contactMessage.count({
@@ -173,7 +177,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
 
     res.json({ pendingOrders, unreadMessages });
   } catch (error) {
-    console.error(error);
+    console.error('Error loading admin stats:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
