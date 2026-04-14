@@ -112,6 +112,7 @@ router.post('/',
     body('name').trim().notEmpty().withMessage('Card name is required'),
     body('gameId').optional().isUUID().withMessage('gameId must be a valid UUID'),
     body('game').optional().trim().notEmpty().withMessage('Game name cannot be empty'),
+    body('rarity').optional().isIn(['common', 'uncommon', 'rare', 'holo', 'ultra', 'mythic', 'secret', 'full-art', 'alternate-art', 'promo']),
   ],
   async (req, res) => {
     try {
