@@ -112,13 +112,6 @@ router.post('/',
     body('name').trim().notEmpty().withMessage('Card name is required'),
     body('gameId').optional().isUUID().withMessage('gameId must be a valid UUID'),
     body('game').optional().trim().notEmpty().withMessage('Game name cannot be empty'),
-    body('set').optional().trim(),
-    body('rarity').optional().isIn(['common', 'uncommon', 'rare', 'holo', 'ultra', 'secret', 'full-art', 'alternate-art']),
-    body('condition').optional().isIn(['MT', 'NM', 'LP', 'MP', 'HP', 'DMG']),
-    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-    body('priceFoil').optional().isFloat({ min: 0 }).withMessage('Price foil must be a positive number'),
-    body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
-    body('imageUrl').optional().isURL().withMessage('imageUrl must be a valid URL'),
   ],
   async (req, res) => {
     try {
