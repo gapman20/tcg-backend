@@ -18,6 +18,7 @@ const wishlistRoutes = require('./routes/wishlist.routes');
 const cartRoutes = require('./routes/cart.routes');
 const contactRoutes = require('./routes/contact.routes');
 const stripeRoutes = require('./routes/stripe.routes');
+const cmsRoutes = require('./routes/cms.routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -127,6 +128,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/stripe', stripeRoutes);
+app.use('/api/cms', cmsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

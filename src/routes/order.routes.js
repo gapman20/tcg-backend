@@ -165,7 +165,7 @@ router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
       prisma.order.count({
         where: {
           status: {
-            not: 'DELIVERED'
+            notIn: ['DELIVERED', 'CANCELLED']
           }
         }
       }),
