@@ -146,13 +146,20 @@ router.post('/',
       let finalGameId = gameId;
 
       if (!finalGameId && game) {
-        const gameRecord = await prisma.game.findFirst({
+        let gameRecord = await prisma.game.findFirst({
           where: { name: game.toLowerCase() }
         });
+        // Create game if not exists
+        if (!gameRecord) {
+          gameRecord = await prisma.game.create({
+            data: {
+              name: game.toLowerCase(),
+              displayName: game.charAt(0).toUpperCase() + game.slice(1)
+            }
+          });
+        }
         if (gameRecord) {
           finalGameId = gameRecord.id;
-        } else {
-          return res.status(400).json({ error: 'Game not found. Create it first.' });
         }
       }
 
@@ -243,7 +250,12 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.card.delete({ where: { id } });
+    // Use deleteMany instead of delete to avoid error if not found
+    const result = await prisma.card.deleteMany({ where: { id } });
+    
+    if (result.count === 0) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
 
     res.json({ message: 'Card deleted successfully' });
   } catch (error) {
