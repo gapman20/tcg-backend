@@ -185,6 +185,11 @@ router.put('/:id',
 
       const { id } = req.params;
       const { game, gameId: gameIdInput, ...updateData } = req.body;
+      
+      // Remove invalid fields that might come from frontend
+      delete updateData.game;
+      delete updateData.gameDisplayName;
+      delete updateData.createdAt;
 
       let finalGameId = gameIdInput;
 

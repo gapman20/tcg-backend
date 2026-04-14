@@ -208,7 +208,13 @@ router.put('/:id',
       const { id } = req.params;
       const { game, gameId, ...rest } = req.body;
 
-      let updateData = rest;
+      let updateData = { ...rest };
+      
+      // Remove invalid fields that might come from frontend
+      delete updateData.game;
+      delete updateData.gameId;
+      delete updateData.gameDisplayName;
+      delete updateData.createdAt;
 
       if (game && !gameId) {
         const gameRecord = await prisma.game.findFirst({
