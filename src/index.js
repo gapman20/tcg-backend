@@ -1,8 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
+
+let helmet;
+try { helmet = require('helmet'); } catch (e) { console.warn('helmet not installed'); }
+let compression;
+try { compression = require('compression'); } catch (e) { console.warn('compression not installed'); }
+
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
 const { sseHandler, emitEvent } = require('./config/sse');
@@ -25,8 +29,9 @@ const app = express();
 app.set('trust proxy', 1);
 
 // Security: Helmet adds important HTTP security headers
-// Includes: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, etc.
-app.use(helmet());
+if (helmet) {
+  app.use(helmet());
+}
 
 // Security: Limit request body size to prevent payload attacks
 app.use(express.json({ limit: '50kb' }));
@@ -87,7 +92,9 @@ app.get('/api/admin/events', (req, res, next) => {
 });
 
 // Compression: gzip responses for better performance
-app.use(compression());
+if (compression) {
+  app.use(compression());
+}
 
 // Aplicar rate limiting
 const generalLimiter = rateLimit({
