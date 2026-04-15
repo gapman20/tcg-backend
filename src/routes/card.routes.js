@@ -1,9 +1,8 @@
 const express = require('express');
 const { query, param, body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 // Listar cartas con filtros
@@ -106,104 +105,157 @@ router.get('/:id', async (req, res) => {
 });
 
 // Crear carta (admin)
-router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const {
-      name,
-      gameId,
-      game,
-      set,
-      setCode,
-      rarity,
-      condition,
-      price,
-      priceFoil,
-      stock,
-      imageUrl,
-      description,
-      scryfallId
-    } = req.body;
-
-    let finalGameId = gameId;
-    
-    if (!finalGameId && game) {
-      const gameRecord = await prisma.game.findFirst({
-        where: { name: game.toLowerCase() }
-      });
-      if (gameRecord) {
-        finalGameId = gameRecord.id;
-      } else {
-        return res.status(400).json({ error: 'Game not found. Create it first.' });
+router.post('/', 
+  authMiddleware, 
+  adminMiddleware,
+  [
+    body('name').trim().notEmpty().withMessage('Card name is required'),
+    body('gameId').optional().isUUID().withMessage('gameId must be a valid UUID'),
+    body('game').optional().trim().notEmpty().withMessage('Game name cannot be empty'),
+    body('rarity').optional().isIn(['common', 'uncommon', 'rare', 'holo', 'ultra', 'mythic', 'secret', 'full-art', 'alternate-art', 'promo']),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-    }
 
-    if (!finalGameId) {
-      return res.status(400).json({ error: 'gameId or game is required' });
-    }
-
-    const card = await prisma.card.create({
-      data: {
+      const {
         name,
-        gameId: finalGameId,
+        gameId,
+        game,
         set,
         setCode,
         rarity,
-        condition: condition || 'NM',
-        price: price || 0,
+        condition,
+        price,
         priceFoil,
-        stock: stock || 0,
+        stock,
         imageUrl,
         description,
         scryfallId
-      },
-      include: { game: true }
-    });
+      } = req.body;
 
-    res.status(201).json(card);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error: ' + error.message });
+      let finalGameId = gameId;
+
+      if (!finalGameId && game) {
+        let gameRecord = await prisma.game.findFirst({
+          where: { name: game.toLowerCase() }
+        });
+        // Create game if not exists
+        if (!gameRecord) {
+          gameRecord = await prisma.game.create({
+            data: {
+              name: game.toLowerCase(),
+              displayName: game.charAt(0).toUpperCase() + game.slice(1)
+            }
+          });
+        }
+        if (gameRecord) {
+          finalGameId = gameRecord.id;
+        }
+      }
+
+      if (!finalGameId) {
+        return res.status(400).json({ error: 'gameId or game is required' });
+      }
+
+      const card = await prisma.card.create({
+        data: {
+          name,
+          gameId: finalGameId,
+          set,
+          setCode,
+          rarity,
+          condition: condition || 'NM',
+          price: parseFloat(price) || 0,
+          priceFoil: priceFoil ? parseFloat(priceFoil) : undefined,
+          stock: parseInt(stock) || 0,
+          imageUrl,
+          description,
+          scryfallId
+        },
+        include: { game: true }
+      });
+
+      res.status(201).json(card);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
+    }
   }
-});
+);
 
 // Actualizar carta (admin)
-router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { game, gameId, ...rest } = req.body;
-    
-    let updateData = rest;
-    
-    if (game && !gameId) {
-      const gameRecord = await prisma.game.findFirst({
-        where: { name: game.toLowerCase() }
-      });
-      if (gameRecord) {
-        updateData.gameId = gameRecord.id;
+router.put('/:id', 
+  authMiddleware, 
+  adminMiddleware,
+  [
+    body('name').optional().trim().notEmpty().withMessage('Card name cannot be empty'),
+    body('gameId').optional().isUUID().withMessage('gameId must be a valid UUID'),
+    body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
+    body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
+    body('imageUrl').optional().isURL().withMessage('imageUrl must be a valid URL'),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
-    } else if (gameId) {
-      updateData.gameId = gameId;
+
+      const { id } = req.params;
+      const { game, gameId, ...rest } = req.body;
+
+      let updateData = { ...rest };
+      
+      // Remove invalid fields that might come from frontend
+      delete updateData.game;
+      delete updateData.gameId;
+      delete updateData.gameDisplayName;
+      delete updateData.createdAt;
+
+      if (game && !gameId) {
+        const gameRecord = await prisma.game.findFirst({
+          where: { name: game.toLowerCase() }
+        });
+        if (gameRecord) {
+          updateData.gameId = gameRecord.id;
+        }
+      } else if (gameId) {
+        updateData.gameId = gameId;
+      }
+
+      // Convert numeric fields
+      if (updateData.price !== undefined) updateData.price = parseFloat(updateData.price);
+      if (updateData.stock !== undefined) updateData.stock = parseInt(updateData.stock);
+
+      const card = await prisma.card.update({
+        where: { id },
+        data: updateData,
+        include: { game: true }
+      });
+
+      res.json(card);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Server error' });
     }
-
-    const card = await prisma.card.update({
-      where: { id },
-      data: updateData,
-      include: { game: true }
-    });
-
-    res.json(card);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Server error: ' + error.message });
   }
-});
+);
 
 // Eliminar carta (admin)
 router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
-    await prisma.card.delete({ where: { id } });
+    // Use deleteMany instead of delete to avoid error if not found
+    const result = await prisma.card.deleteMany({ where: { id } });
+    
+    if (result.count === 0) {
+      return res.status(404).json({ error: 'Card not found' });
+    }
 
     res.json({ message: 'Card deleted successfully' });
   } catch (error) {

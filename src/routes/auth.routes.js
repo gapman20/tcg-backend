@@ -2,11 +2,10 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
 const { OAuth2Client } = require('google-auth-library');
+const prisma = require('../config/prisma');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Registro de usuario
@@ -298,7 +297,11 @@ router.post('/forgot-password', async (req, res) => {
     // En producción: enviar email con el código
     // await sendEmail(email, 'Código de recuperación', `Tu código es: ${resetCode}`);
     
-    console.log(`🔐 Código de recuperación para ${email}: ${resetCode}`);
+    // SECURITY: Never log sensitive codes in production!
+    // This should only be used for development testing
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV ONLY] Password reset code for ${email}: ${resetCode}`);
+    }
 
     res.json({ message: 'Si el email existe, recibirás un código de recuperación' });
   } catch (error) {

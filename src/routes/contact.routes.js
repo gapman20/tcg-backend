@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../config/prisma');
 const { body, validationResult } = require('express-validator');
-
-const prisma = new PrismaClient();
+const { authMiddleware, adminMiddleware } = require('../middleware/auth');
+const { emitEvent } = require('../config/sse');
 
 // Validación
 const contactValidation = [
@@ -33,6 +33,14 @@ router.post('/', contactValidation, async (req, res) => {
     });
 
     res.status(201).json(contactMessage);
+    
+    // Emit real-time event for admin notification
+    emitEvent('new_message', {
+      messageId: contactMessage.id,
+      name: contactMessage.name,
+      email: contactMessage.email,
+      subject: contactMessage.subject,
+    });
   } catch (error) {
     console.error('Error creating contact message:', error);
     res.status(500).json({ error: 'Error al guardar el mensaje' });
@@ -40,7 +48,7 @@ router.post('/', contactValidation, async (req, res) => {
 });
 
 // Obtener todos los mensajes (solo admin)
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const messages = await prisma.contactMessage.findMany({
       orderBy: { createdAt: 'desc' },
@@ -52,8 +60,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Marcar mensaje como leído
-router.put('/:id/read', async (req, res) => {
+// Marcar mensaje como leído (solo admin)
+router.put('/:id/read', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     const message = await prisma.contactMessage.update({
@@ -67,8 +75,8 @@ router.put('/:id/read', async (req, res) => {
   }
 });
 
-// Eliminar mensaje
-router.delete('/:id', async (req, res) => {
+// Eliminar mensaje (solo admin)
+router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.contactMessage.delete({

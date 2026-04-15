@@ -1,10 +1,10 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
+const prisma = require('../config/prisma');
+const { emitEvent } = require('../config/sse');
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const { authMiddleware, adminMiddleware, optionalAuth } = require('../middleware/auth');
 
 // Crear pedido
@@ -123,6 +123,15 @@ router.post('/', optionalAuth, [
 
   try {
     res.status(201).json(t);
+    
+    // Emit real-time event for admin notification
+    emitEvent('new_order', {
+      orderNumber: t.orderNumber,
+      customerName: t.customerName,
+      total: t.total,
+      paymentMethod: t.paymentMethod,
+      orderId: t.id,
+    });
   } catch (error) {
     console.error(error);
     if (error.status) {
@@ -144,6 +153,30 @@ router.get('/my-orders', authMiddleware, async (req, res) => {
     res.json(orders);
   } catch (error) {
     console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Obtener estadísticas para admin (pending orders, unread messages)
+router.get('/stats', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const [pendingOrders, unreadMessages] = await Promise.all([
+      // Count orders that are not DELIVERED or CANCELLED (still active)
+      prisma.order.count({
+        where: {
+          status: {
+            notIn: ['DELIVERED', 'CANCELLED']
+          }
+        }
+      }),
+      prisma.contactMessage.count({
+        where: { read: false }
+      })
+    ]);
+
+    res.json({ pendingOrders, unreadMessages });
+  } catch (error) {
+    console.error('Error loading admin stats:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });

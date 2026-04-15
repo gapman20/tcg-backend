@@ -255,3 +255,46 @@ model ContactMessage {
 
   @@map("tcg_contact_messages")
 }
+
+// Blog post
+model BlogPost {
+  id          String   @id @default(uuid())
+  title       String
+  excerpt     String
+  content     String
+  author      String
+  image       String?
+  tags        String?
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tcg_blog_posts")
+}
+
+// Dynamic page
+model Page {
+  id           String   @id @default(uuid())
+  name         String
+  path         String   @unique
+  pageTitle    String
+  pageSubtitle String
+  pageText     String
+  pageImage    String?
+  active       Boolean  @default(false)
+  isCustom     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("tcg_pages")
+}
+
+// Theme configuration
+model ThemeConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("tcg_theme_config")
+}
