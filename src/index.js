@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
+// const helmet = require('helmet'); // TEMP: disabled for Render
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
