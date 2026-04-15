@@ -24,13 +24,18 @@ const stripeRoutes = require('./routes/stripe.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const tcgdexRoutes = require('./routes/tcgdex.routes');
 const currencyRoutes = require('./routes/currency.routes');
+const pokewalletRoutes = require('./routes/pokewallet.routes');
 
 const app = express();
 app.set('trust proxy', 1);
 
 // Security: Helmet adds important HTTP security headers
+// Configured to allow image responses through
 if (helmet) {
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  }));
 }
 
 // Security: Limit request body size to prevent payload attacks
@@ -139,6 +144,7 @@ app.use('/api/stripe', stripeRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/tcgdex', tcgdexRoutes);
 app.use('/api/currency', currencyRoutes);
+app.use('/api/pokewallet', pokewalletRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
