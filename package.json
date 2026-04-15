@@ -4,7 +4,6 @@
   "description": "Backend API for TCG Trading Card Games e-commerce",
   "main": "src/index.js",
   "scripts": {
-    "postinstall": "npm install",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "db:generate": "npx prisma@5.22.0 generate",
