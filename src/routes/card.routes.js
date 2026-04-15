@@ -196,7 +196,7 @@ router.put('/:id',
     body('gameId').optional().isUUID().withMessage('gameId must be a valid UUID'),
     body('price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
     body('stock').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative integer'),
-    body('imageUrl').optional().isURL().withMessage('imageUrl must be a valid URL'),
+    // Allow any string for imageUrl (including blob URLs)
   ],
   async (req, res) => {
     try {
