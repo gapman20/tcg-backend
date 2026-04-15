@@ -2,10 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-let helmet;
-try { helmet = require('helmet'); } catch (e) { console.warn('helmet not installed'); }
-let compression;
-try { compression = require('compression'); } catch (e) { console.warn('compression not installed'); }
+// Importar módulos centrales
+const helmet = require('helmet');
+const compression = require('compression');
 
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');

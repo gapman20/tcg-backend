@@ -2,7 +2,7 @@ services:
   - type: web
     name: tcg-backend
     env: node
-    buildCommand: npm install && npm run db:generate
+    buildCommand: npm ci --legacy-peer-deps && npm run db:generate
     startCommand: npm start
     envVars:
       - key: NODE_ENV
