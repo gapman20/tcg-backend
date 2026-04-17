@@ -25,6 +25,7 @@ const cmsRoutes = require('./routes/cms.routes');
 const tcgdexRoutes = require('./routes/tcgdex.routes');
 const currencyRoutes = require('./routes/currency.routes');
 const pokewalletRoutes = require('./routes/pokewallet.routes');
+const campaignRoutes = require('./routes/campaign.routes');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -145,6 +146,7 @@ app.use('/api/cms', cmsRoutes);
 app.use('/api/tcgdex', tcgdexRoutes);
 app.use('/api/currency', currencyRoutes);
 app.use('/api/pokewallet', pokewalletRoutes);
+app.use('/api/campaigns', campaignRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
