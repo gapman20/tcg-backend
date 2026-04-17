@@ -298,3 +298,20 @@ model ThemeConfig {
 
   @@map("tcg_theme_config")
 }
+
+// Campañas de ofertas
+model Campaign {
+  id                String    @id @default(uuid())
+  name              String
+  discountPercent   Int       @default(0)
+  startDate         DateTime?
+  endDate           DateTime?
+  active            Boolean   @default(false)
+  bannerText        String?
+  bannerColor       String    @default("#ef4444")
+  selectedProducts  String[]  @default([])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("tcg_campaigns")
+}

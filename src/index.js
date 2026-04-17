@@ -1,8 +1,11 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+
+// Importar módulos centrales
 const helmet = require('helmet');
 const compression = require('compression');
+
 const rateLimit = require('express-rate-limit');
 const prisma = require('./config/prisma');
 const { sseHandler, emitEvent } = require('./config/sse');
@@ -20,13 +23,21 @@ const contactRoutes = require('./routes/contact.routes');
 const stripeRoutes = require('./routes/stripe.routes');
 const cmsRoutes = require('./routes/cms.routes');
 const tcgdexRoutes = require('./routes/tcgdex.routes');
+const currencyRoutes = require('./routes/currency.routes');
+const pokewalletRoutes = require('./routes/pokewallet.routes');
+const campaignRoutes = require('./routes/campaign.routes');
 
 const app = express();
 app.set('trust proxy', 1);
 
 // Security: Helmet adds important HTTP security headers
-// Includes: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, etc.
-app.use(helmet());
+// Configured to allow image responses through
+if (helmet) {
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+  }));
+}
 
 // Security: Limit request body size to prevent payload attacks
 app.use(express.json({ limit: '50kb' }));
@@ -87,7 +98,9 @@ app.get('/api/admin/events', (req, res, next) => {
 });
 
 // Compression: gzip responses for better performance
-app.use(compression());
+if (compression) {
+  app.use(compression());
+}
 
 // Aplicar rate limiting
 const generalLimiter = rateLimit({
@@ -131,6 +144,9 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/stripe', stripeRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/tcgdex', tcgdexRoutes);
+app.use('/api/currency', currencyRoutes);
+app.use('/api/pokewallet', pokewalletRoutes);
+app.use('/api/campaigns', campaignRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -156,7 +172,28 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Auto-ping para mantener activo el servicio en producción (Render)
+if (process.env.RENDER_EXTERNAL_URL && process.env.NODE_ENV === 'production') {
+  const axios = require('axios');
+  const PING_INTERVAL = 14 * 60 * 1000; // Cada 14 minutos
+  
+  console.log(`🔄 Auto-ping habilitado para: ${process.env.RENDER_EXTERNAL_URL}`);
+  
+  setInterval(async () => {
+    try {
+      await axios.get(`${process.env.RENDER_EXTERNAL_URL}/api/health`, {
+        timeout: 10000,
+        timeoutErrorMessage: 'Ping timeout'
+      });
+      console.log('✅ Auto-ping enviado para mantener el servicio activo');
+    } catch (err) {
+      console.error('⚠️ Error en auto-ping:', err.message);
+    }
+  }, PING_INTERVAL);
+}
+
 const PORT = process.env.PORT || 3001;
+
 
 app.listen(PORT, () => {
   console.log(`🚀 TCG Backend running on port ${PORT}`);
