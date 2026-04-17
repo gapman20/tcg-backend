@@ -190,6 +190,9 @@ if (process.env.RENDER_EXTERNAL_URL && process.env.NODE_ENV === 'production') {
   }, PING_INTERVAL);
 }
 
+const PORT = process.env.PORT || 3001;
+
+
 app.listen(PORT, () => {
   console.log(`🚀 TCG Backend running on port ${PORT}`);
   console.log(`📦 Database: ${process.env.DATABASE_URL ? 'Connected' : 'Not configured'}`);
