@@ -170,7 +170,25 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-const PORT = process.env.PORT || 3001;
+// Auto-ping para mantener activo el servicio en producción (Render)
+if (process.env.RENDER_EXTERNAL_URL && process.env.NODE_ENV === 'production') {
+  const axios = require('axios');
+  const PING_INTERVAL = 14 * 60 * 1000; // Cada 14 minutos
+  
+  console.log(`🔄 Auto-ping habilitado para: ${process.env.RENDER_EXTERNAL_URL}`);
+  
+  setInterval(async () => {
+    try {
+      await axios.get(`${process.env.RENDER_EXTERNAL_URL}/api/health`, {
+        timeout: 10000,
+        timeoutErrorMessage: 'Ping timeout'
+      });
+      console.log('✅ Auto-ping enviado para mantener el servicio activo');
+    } catch (err) {
+      console.error('⚠️ Error en auto-ping:', err.message);
+    }
+  }, PING_INTERVAL);
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 TCG Backend running on port ${PORT}`);
